@@ -1,37 +1,24 @@
-package main
+package db_restapi_dev
 
 import (
 	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
+	"restAPI/internal/models"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/lib/pq"
 )
 
 var db *sql.DB
 
-type Album struct {
-	ID     int  `json:"id"`
-	Title  string  `json:"title"`
-	Artist string  `json:"artist"`
-	Price  float32 `json:"price"`
-}
+func RestAPIAuth() {
+	config := NewConfig()
 
-const (
-    host     = "localhost"
-    port     = 5432
-    user     = "postgres"
-    password = "4228"
-    dbname   = "restapi_dev"
-)
-
-func main() {
 	var err error
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-        "password=%s dbname=%s sslmode=disable",
-        host, port, user, password, dbname)
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.Host, config.Port, config.User, config.Password, config.DBname)
+
+
     db, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
         panic(err)
@@ -45,12 +32,13 @@ func main() {
   
     fmt.Println("Successfully connected!")
 
+	//Серверная часть 
+
 	router := gin.Default()
 	router.GET("/albums", GetAlbums)
 	router.POST("/albums", CreateAlbum)
 
 	router.Run("localhost:8080")
-
 }
 
 func GetAlbums(c *gin.Context) {
@@ -62,10 +50,10 @@ func GetAlbums(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	var albums []Album
+	var albums []models.Album
 
 	for rows.Next() {
-		var a Album
+		var a models.Album
 		err := rows.Scan(&a.ID, &a.Title, &a.Artist, &a.Price)
 		if err != nil {
 			log.Fatal(err)
@@ -82,7 +70,7 @@ func GetAlbums(c *gin.Context) {
 }
 
 func CreateAlbum(c *gin.Context) {
-	var a Album
+	var a models.Album
 
 	if err := c.BindJSON(&a); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalud requesr payload"})
