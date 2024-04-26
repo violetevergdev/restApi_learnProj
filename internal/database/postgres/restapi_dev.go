@@ -13,9 +13,9 @@ import (
 )
 
 // Инициализируем тип sql.DB
-var db *sql.DB
+var DB *sql.DB
 
-// Коннектимся к БД 
+// Коннектимся к БД
 func DBConnect() {
 	//Получаем конфигурацию для работы с БД
 	config := NewConfig()
@@ -23,13 +23,13 @@ func DBConnect() {
 	var err error
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.Host, config.Port, config.User, config.Password, config.DBname)
 
-    db, err = sql.Open("postgres", psqlInfo)
+    DB, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
        log.Fatalf("Failed to open db: %s", err)
     }
-
+	
   // Проверяем соединение с БД
-    err = db.Ping()
+    err = DB.Ping()
     if err != nil {
 	 	log.Fatalf("Failed to ping db: %s", err)
     }
@@ -41,7 +41,7 @@ func GetAlbums(c *gin.Context) {
 	//Указывает формат response 
 	c.Header("Content-Type", "application/json")
 
-	rows, err := db.Query("SELECT * FROM albums")
+	rows, err := DB.Query("SELECT * FROM albums")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func GetAlbums(c *gin.Context) {
 		log.Fatal(err)
 	}
 	// Конвертируем массив в JSON и возвращаем HTTP res
-	c.IndentedJSON(http.StatusOK, albums)
+	c.JSON(http.StatusOK, albums)
 }
 
 func CreateAlbum(c *gin.Context) {
@@ -78,7 +78,7 @@ func CreateAlbum(c *gin.Context) {
 	}
 
 	// Инициализуем запрос
-	stmt, err := db.Prepare("INSERT INTO albums(id, title, artist, price) values(default, $1, $2, $3)")
+	stmt, err := DB.Prepare("INSERT INTO albums(id, title, artist, price) values(default, $1, $2, $3)")
 	if err != nil {
 		log.Fatal(err)
 	}
