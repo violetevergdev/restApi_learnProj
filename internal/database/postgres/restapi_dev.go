@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
 	"restAPI/internal/models"
 
 	"github.com/gin-gonic/gin"
@@ -14,39 +15,38 @@ import (
 // Инициализируем тип sql.DB
 var db *sql.DB
 
-func RestAPIAuth() {
+// Коннектимся к БД 
+func DBConnect() {
 	//Получаем конфигурацию для работы с БД
 	config := NewConfig()
 
 	var err error
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.Host, config.Port, config.User, config.Password, config.DBname)
 
-
     db, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
-       log.Fatal(err)
+       log.Fatalf("Failed to open db: %s", err)
     }
-    defer db.Close()
 
   // Проверяем соединение с БД
     err = db.Ping()
     if err != nil {
-		log.Fatal(err)
+	 	log.Fatalf("Failed to ping db: %s", err)
     }
   
     fmt.Println("Successfully connected!")
 }
-
+// Определяем методы работы с БД
 func GetAlbums(c *gin.Context) {
 	//Указывает формат response 
 	c.Header("Content-Type", "application/json")
- fmt.Println(1)
+
 	rows, err := db.Query("SELECT * FROM albums")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer rows.Close()
-fmt.Println(2)
+
 	var albums []models.Album
 
 	// Итерация по полученым строкам с запроса
@@ -78,13 +78,13 @@ func CreateAlbum(c *gin.Context) {
 	}
 
 	// Инициализуем запрос
-	stmt, err := db.Prepare("INSERT INTO albums(id, title, artist, price) values(default, $2, $3, $4)")
+	stmt, err := db.Prepare("INSERT INTO albums(id, title, artist, price) values(default, $1, $2, $3)")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
 	// Обрабатываем запрос в БД
-	if _, err := stmt.Exec(a.ID, a.Title, a.Artist, a.Price); err != nil {
+	if _, err := stmt.Exec(a.Title, a.Artist, a.Price); err != nil {
 		log.Fatal(err)
 	}
 
